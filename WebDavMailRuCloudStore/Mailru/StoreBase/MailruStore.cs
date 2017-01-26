@@ -56,8 +56,9 @@ namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
             }
             catch (AggregateException e)
             {
-                var we = e.InnerExceptions.OfType<WebException>().FirstOrDefault();
-                if (we == null || we.Status != WebExceptionStatus.ProtocolError) throw;
+                //var we = e.InnerExceptions.OfType<WebException>().FirstOrDefault();
+                //if (we == null || we.Status != WebExceptionStatus.ProtocolError) throw;
+                throw;
             }
 
             return Task.FromResult<IStoreItem>(null);
