@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using MailRuCloudApi;
+using MailRuCloudApi.EntryTypes;
 using MailRuCloudApi.SpecialCommands;
 using NWebDav.Server;
 using NWebDav.Server.Http;
@@ -15,6 +16,7 @@ using NWebDav.Server.Logging;
 using NWebDav.Server.Props;
 using NWebDav.Server.Stores;
 using YaR.WebDavMailRu.CloudStore.DavCustomProperty;
+using File = MailRuCloudApi.EntryTypes.File;
 
 namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
 {
@@ -292,26 +294,12 @@ namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
         {
             var item = Cloud.Instance(httpContext).GetItems(_directoryInfo).Result;
 
-            var items = item.Folders.Select(subDirectory => new MailruStoreCollection(httpContext, LockingManager, subDirectory, IsWritable))
+            if (!(item is Folder folder)) return null;
+
+            var items = folder.Folders.Select(subDirectory => new MailruStoreCollection(httpContext, LockingManager, subDirectory, IsWritable))
                 .Cast<IStoreItem>().ToList();
 
-            items.AddRange(item.Files.Select(file => new MailruStoreItem(LockingManager, file, IsWritable)));
-
-            //var shares = item.Folders
-            //    .Where(dir => !string.IsNullOrEmpty(dir.PublicLink))
-            //    .Select(dir => dir.FullPath + "\t" + dir.PublicLink)
-            //    .ToList();
-            //if (shares.Any())
-            //{
-            //    string sharestr = shares
-            //        .Aggregate((c, n) => c + "\r\n" + n);
-
-            //    items.Add(new MailruStoreItem(
-            //        LockingManager,
-            //        new MailRuCloudApi.File(_directoryInfo.FullPath + "/folder.info.wdmrc", sharestr.Length,
-            //            string.Empty),
-            //        false));
-            //}
+            items.AddRange(folder.Files.Select(file => new MailruStoreItem(LockingManager, file, IsWritable)));
 
             return Task.FromResult<IList<IStoreItem>>(items);
         }
@@ -327,7 +315,7 @@ namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
 
             var size = httpContext.Request.ContentLength();
 
-            var f = new MailRuCloudApi.File(destinationPath, size, null);
+            var f = new File(destinationPath, size, null);
 
             return Task.FromResult(new StoreItemResult(result, new MailruStoreItem(LockingManager, f, IsWritable)));
         }

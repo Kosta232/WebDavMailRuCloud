@@ -12,18 +12,19 @@ using NWebDav.Server.Logging;
 using NWebDav.Server.Props;
 using NWebDav.Server.Stores;
 using YaR.WebDavMailRu.CloudStore.DavCustomProperty;
+using File = MailRuCloudApi.EntryTypes.File;
 
 namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
 {
     [DebuggerDisplay("{_fileInfo.FullPath}")]
     public sealed class MailruStoreItem : IMailruStoreItem
     {
-        private static readonly ILogger SLog = LoggerFactory.Factory.CreateLogger(typeof(MailruStoreItem));
-        private readonly MailRuCloudApi.File _fileInfo;
+        private static readonly ILogger Logger = LoggerFactory.Factory.CreateLogger(typeof(MailruStoreItem));
+        private readonly File _fileInfo;
 
-        public MailRuCloudApi.File FileInfo => _fileInfo;
+        public File FileInfo => _fileInfo;
 
-        public MailruStoreItem(ILockingManager lockingManager, MailRuCloudApi.File fileInfo, bool isWritable)
+        public MailruStoreItem(ILockingManager lockingManager, File fileInfo, bool isWritable)
         {
             LockingManager = lockingManager;
             _fileInfo = fileInfo;
@@ -180,7 +181,7 @@ namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
             // TODO: rewrite
             if (httpContext.Request.GetHeaderValue("Transfer-Encoding") == "chunked" && _fileInfo.Size == 0)
             {
-                SLog.Log(LogLevel.Warning, () => "Client does not send file size, caching in memory!");
+                Logger.Log(LogLevel.Warning, () => "Client does not send file size, caching in memory!");
                 var memStream = new MemoryStream();
                 await inputStream.CopyToAsync(memStream).ConfigureAwait(false);
 
@@ -254,12 +255,12 @@ namespace YaR.WebDavMailRu.CloudStore.Mailru.StoreBase
             }
             catch (IOException ioException) when (ioException.IsDiskFull())
             {
-                SLog.Log(LogLevel.Error, () => "Out of disk space while copying data.", ioException);
+                Logger.Log(LogLevel.Error, () => "Out of disk space while copying data.", ioException);
                 return new StoreItemResult(DavStatusCode.InsufficientStorage);
             }
             catch (Exception exc)
             {
-                SLog.Log(LogLevel.Error, () => "Unexpected exception while copying data.", exc);
+                Logger.Log(LogLevel.Error, () => "Unexpected exception while copying data.", exc);
                 return new StoreItemResult(DavStatusCode.InternalServerError);
             }
         }
